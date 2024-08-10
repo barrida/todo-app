@@ -1,0 +1,46 @@
+services:
+  couchbase:
+    build:
+      context: ./couchbase
+      args:
+        COUCHBASE_ADMINISTRATOR_USERNAME: "Administrator"
+        COUCHBASE_ADMINISTRATOR_PASSWORD: "password"
+        COUCHBASE_BUCKET: "default"
+        COUCHBASE_BUCKET_PASSWORD: ""
+    container_name: couchbase
+    environment:
+      - COUCHBASE_ADMINISTRATOR_USERNAME=Administrator
+      - COUCHBASE_ADMINISTRATOR_PASSWORD=password
+      - COUCHBASE_BUCKET=default
+      - COUCHBASE_BUCKET_PASSWORD=
+    volumes:
+      - ~/couchbase/node1:/opt/couchbase/var
+    ports:
+      - 8091-8093:8091-8093
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8091/ui/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+    networks:
+      todo-network:
+        aliases:
+          - couchbase1  # Add alias here
+
+  server:
+    build: .
+    container_name: todo-app
+    environment:
+      COUCHBASE_HOST: couchbase1
+    depends_on:
+      couchbase:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+    networks:
+      - todo-network
+
+networks:
+  todo-network:
+    driver: bridge
