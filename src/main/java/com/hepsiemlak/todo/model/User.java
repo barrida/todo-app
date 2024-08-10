@@ -1,5 +1,7 @@
 package com.hepsiemlak.todo.model;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,11 +31,12 @@ public class User {
     private Long userId;
 
     @Field
-    @NotNull(message = "Username is required")
+    @NotBlank(message = "Username is required")
     private String username;
 
     @Field
-    @NotNull(message = "Email is required")
+    @Email(message = "Email should be valid")
+    @NotBlank(message = "Email is required")
     private String email;
 
     @Field
