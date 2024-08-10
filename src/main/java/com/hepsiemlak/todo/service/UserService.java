@@ -1,6 +1,8 @@
 package com.hepsiemlak.todo.service;
 
 
+import com.hepsiemlak.todo.exception.ErrorCode;
+import com.hepsiemlak.todo.exception.UserExistsException;
 import com.hepsiemlak.todo.model.User;
 import com.hepsiemlak.todo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,7 @@ public class UserService {
         Optional<User> existingUserByEmail = userRepository.findByEmail(user.getEmail());
 
         if (existingUserByUsername.isPresent() || existingUserByEmail.isPresent()) {
-            throw new RuntimeException("Username or email already exists");
+            throw new UserExistsException(ErrorCode.USER_EXISTS);
         }
         return userRepository.save(user);
     }
