@@ -1,5 +1,6 @@
 package com.hepsiemlak.todo.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
@@ -11,24 +12,41 @@ import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepos
 @EnableCouchbaseRepositories
 public class CouchbaseConfig extends AbstractCouchbaseConfiguration {
 
+    @Value("${spring.couchbase.connection-string}")
+    private String connectionString;
+
+    @Value("${spring.couchbase.username}")
+    private String userName;
+
+    @Value("${spring.couchbase.password}")
+    private String password;
+
+    @Value("${spring.couchbase.bucket.name}")
+    private String bucketName;
+
     @Override
     public String getConnectionString() {
-        return "couchbase://127.0.0.1";
+        return connectionString;
     }
 
     @Override
     public String getUserName() {
-        return "admin";
+        return userName;
     }
 
     @Override
     public String getPassword() {
-        return "password";
+        return password;
     }
 
     @Override
     public String getBucketName() {
-        return "todo-bucket";
+        return bucketName;
+    }
+
+    @Override
+    protected boolean autoIndexCreation() {
+        return true;
     }
 }
 

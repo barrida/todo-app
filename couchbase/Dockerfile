@@ -1,19 +1,17 @@
-# Use the official Couchbase image as the base
-FROM couchbase:latest
+FROM couchbase
 
-# Set environment variables for Couchbase
-ENV COUCHBASE_USER=admin
-ENV COUCHBASE_PASSWORD=password
-ENV COUCHBASE_BUCKET=todo-bucket
+# Declare build arguments
+ARG COUCHBASE_ADMINISTRATOR_USERNAME
+ARG COUCHBASE_ADMINISTRATOR_PASSWORD
+ARG COUCHBASE_BUCKET
+ARG COUCHBASE_BUCKET_PASSWORD
 
-# Copy the configuration script into the container
-COPY configure-server.sh /opt/couchbase/
+# Set environment variables using the build arguments
+ENV COUCHBASE_ADMINISTRATOR_USERNAME=${COUCHBASE_ADMINISTRATOR_USERNAME}
+ENV COUCHBASE_ADMINISTRATOR_PASSWORD=${COUCHBASE_ADMINISTRATOR_PASSWORD}
+ENV COUCHBASE_BUCKET=${COUCHBASE_BUCKET}
+ENV COUCHBASE_BUCKET_PASSWORD=${COUCHBASE_BUCKET_PASSWORD}
 
-# Make the script executable
-RUN chmod +x /opt/couchbase/configure-server.sh
+COPY configure.sh /opt/couchbase
 
-# Expose necessary ports
-EXPOSE 8091 8092 8093 8094 8095 8096 11210 11211
-
-# Entry point to start Couchbase server and run the configuration script
-ENTRYPOINT ["/bin/bash", "-c", "couchbase-server & sleep 30 && /opt/couchbase/configure-server.sh && tail -f /dev/null"]
+CMD ["/opt/couchbase/configure.sh"]
