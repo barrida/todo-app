@@ -9,7 +9,7 @@ import lombok.Getter;
 public enum ErrorCode {
 
     USER_NOT_FOUND("USER_NOT_FOUND", "User not found"),
-    INVALID_INPUT("INVALID_INPUT", "Invalid input");
+    USER_EXISTS("USER_EXISTS", "Username or email already exists");
 
     private final String code;
     private final String message;
