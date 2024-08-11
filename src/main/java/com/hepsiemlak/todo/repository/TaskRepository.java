@@ -11,5 +11,5 @@ import java.util.Optional;
  */
 public interface TaskRepository extends CouchbaseRepository<Task, String> {
     Optional<List<Task>> findByUserId(Long id);
-    Optional<Task> findByIdAndUserId(Long id, String userId);
+    Optional<Task> findByIdAndUserId(Long id, Long userId);
 }

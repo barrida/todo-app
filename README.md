@@ -131,3 +131,7 @@ curl -X POST http://localhost:8080/v1/register-user \
           "password": "password123"
         }'
 ```
+
+# OpenAPI Swagger endpoint definition
+
+Browse to Swagger to analyse endpoints http://localhost:8080/swagger-ui/index.html#/
