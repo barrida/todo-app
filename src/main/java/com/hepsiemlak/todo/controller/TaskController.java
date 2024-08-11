@@ -1,6 +1,7 @@
 package com.hepsiemlak.todo.controller;
 
 import com.hepsiemlak.todo.exception.ErrorCode;
+import com.hepsiemlak.todo.exception.TaskNotFoundException;
 import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.Task;
 import com.hepsiemlak.todo.model.User;
@@ -71,7 +72,7 @@ public class TaskController {
             @ApiResponse(responseCode = "200", description = "Task found",
                     content = @Content(schema = @Schema(implementation = Task.class))),
             @ApiResponse(responseCode = "404", description = "Task not found",
-                    content = @Content)
+                    content = @Content(schema = @Schema(implementation = TaskNotFoundException.class)))
     })
     @GetMapping("/users/{userId}/tasks/{taskId}")
     @PreAuthorize("hasAuthority('SCOPE_message:read')")
@@ -86,7 +87,12 @@ public class TaskController {
             @ApiResponse(responseCode = "200", description = "Task updated successfully",
                     content = @Content(schema = @Schema(implementation = Task.class))),
             @ApiResponse(responseCode = "400", description = "Invalid task data provided"),
-            @ApiResponse(responseCode = "404", description = "Task or user not found")
+            @ApiResponse(responseCode = "404", description = "Task not found",
+                    content = @Content(schema = @Schema(implementation = TaskNotFoundException.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(schema = @Schema(implementation = UserNotFoundException.class))
+            )
     })
     @PutMapping("/tasks/{id}")
     @PreAuthorize("hasAuthority('SCOPE_message:write')")
@@ -101,7 +107,12 @@ public class TaskController {
     @Operation(summary = "Delete an existing task for a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Task or user not found")
+            @ApiResponse(responseCode = "404", description = "Task not found",
+                    content = @Content(schema = @Schema(implementation = TaskNotFoundException.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(schema = @Schema(implementation = UserNotFoundException.class))
+            )
     })
     @DeleteMapping("/tasks/{id}")
     @PreAuthorize("hasAuthority('SCOPE_message:write')")
