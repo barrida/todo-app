@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -58,9 +59,9 @@ public class TaskController {
             @ApiResponse(responseCode = "200", description = "List of tasks",
                     content = @Content(schema = @Schema(implementation = Task.class)))
     })
-    @GetMapping
+    @GetMapping("/tasks")
     @PreAuthorize("hasAuthority('SCOPE_message:read')")
-    public ResponseEntity<List<Task>> getAllTasks(Long userId) {
+    public ResponseEntity<List<Task>> getAllTasksByUser(@RequestParam("userId") @NotNull(message = "User ID is required") Long userId) {
         List<Task> tasks = taskService.getTasksByUser(userId);
         return ResponseEntity.ok(tasks);
     }

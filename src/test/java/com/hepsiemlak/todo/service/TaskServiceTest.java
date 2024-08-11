@@ -2,6 +2,7 @@ package com.hepsiemlak.todo.service;
 
 import com.hepsiemlak.todo.exception.ErrorCode;
 import com.hepsiemlak.todo.exception.TaskNotFoundException;
+import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.Task;
 import com.hepsiemlak.todo.repository.TaskRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -13,11 +14,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  * @author suleyman.yildirim
@@ -115,4 +119,39 @@ class TaskServiceTest {
         assertEquals("Task with ID 1 not found for user 123", exception.getMessage());
     }
 
+    @Test
+    void getTasksByUser_ShouldReturnTasks_WhenUserExists() {
+        // Arrange
+        Long userId = 1L;
+        List<Task> expectedTasks = Arrays.asList(
+                new Task(1L, "Task 1", "Description 1", "2024-08-15", "High", false, 1L),
+                new Task(2L, "Task 2", "Description 2", "2024-08-16", "Medium", true, 1L)
+        );
+
+        when(taskRepository.findByUserId(userId)).thenReturn(Optional.of(expectedTasks));
+
+        // Act
+        List<Task> actualTasks = taskService.getTasksByUser(userId);
+
+        // Assert
+        assertNotNull(actualTasks);
+        assertEquals(expectedTasks.size(), actualTasks.size());
+        assertEquals(expectedTasks, actualTasks);
+        verify(taskRepository, times(1)).findByUserId(userId);
+    }
+
+    @Test
+    void getTasksByUser_ShouldThrowUserNotFoundException_WhenUserDoesNotExist() {
+        // Arrange
+        Long userId = 1L;
+        when(taskRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
+            taskService.getTasksByUser(userId);
+        });
+
+        assertEquals("User not found", exception.getMessage());
+        verify(taskRepository, times(1)).findByUserId(userId);
+    }
 }

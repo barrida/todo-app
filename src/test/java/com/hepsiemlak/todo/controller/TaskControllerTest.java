@@ -2,6 +2,7 @@ package com.hepsiemlak.todo.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hepsiemlak.todo.config.OAuth2ResourceServerSecurityConfiguration;
+import com.hepsiemlak.todo.exception.ErrorCode;
 import com.hepsiemlak.todo.exception.TaskNotFoundException;
 import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.Task;
@@ -15,15 +16,18 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -168,5 +172,68 @@ class TaskControllerTest {
                         .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read")))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(authorities = "SCOPE_message:read")
+    void getAllTasks_ShouldReturnTasks_WhenUserExists() throws Exception {
+        // Arrange
+        Long userId = 1L;
+        List<Task> tasks = Arrays.asList(
+                new Task(1L, "Task 1", "Description 1", "2024-08-15", "High", false, userId),
+                new Task(2L, "Task 2", "Description 2", "2024-08-16", "Medium", true, userId)
+        );
+
+        when(taskService.getTasksByUser(userId)).thenReturn(tasks);
+
+        // Act & Assert
+        mockMvc.perform(get("/v1/tasks")
+                        .param("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].title").value("Task 1"))
+                .andExpect(jsonPath("$[1].title").value("Task 2"));
+
+        verify(taskService, times(1)).getTasksByUser(userId);
+    }
+
+    @Test
+    @WithMockUser(authorities = "SCOPE_message:read")
+    void getAllTasks_ShouldReturnNotFound_WhenUserDoesNotExist() throws Exception {
+        // Arrange
+        Long userId = 1L;
+
+        when(taskService.getTasksByUser(userId)).thenThrow(new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+
+        // Act & Assert
+        mockMvc.perform(get("/v1/tasks")
+                        .param("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+
+        verify(taskService, times(1)).getTasksByUser(userId);
+    }
+
+    @Test
+    @WithMockUser(authorities = "SCOPE_message:read")
+    void getAllTasks_ShouldReturnBadRequest_WhenInvalidUserIdProvided() throws Exception {
+        // Arrange
+        String invalidUserId = "abc";  // Non-numeric userId
+
+        // Act & Assert
+        mockMvc.perform(get("/v1/tasks")
+                        .param("userId", invalidUserId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "SCOPE_message:read")
+    void getAllTasks_ShouldReturnBadRequest_WhenUserIdIsMissing() throws Exception {
+        // Act & Assert
+        mockMvc.perform(get("/v1/tasks")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
     }
 }
