@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -42,6 +43,7 @@ class UserControllerTest {
         when(userService.registerUser(any(User.class))).thenReturn(user);
 
         mockMvc.perform(post("/v1/register-user")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:write")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\": \"1\", \"username\": \"newuser\", \"email\": \"newuser@example.com\"}"))
                 .andExpect(status().isCreated())
@@ -54,6 +56,7 @@ class UserControllerTest {
         when(userService.registerUser(any(User.class))).thenThrow(new UserExistsException(ErrorCode.USER_EXISTS));
 
         mockMvc.perform(post("/v1/register-user")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:write")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\": \"1\", \"username\": \"existinguser\", \"email\": \"existinguser@example.com\"}"))
                 .andExpect(status().isConflict());
@@ -69,6 +72,7 @@ class UserControllerTest {
         when(userService.findUserByUsername("existinguser")).thenReturn(Optional.of(user));
 
         mockMvc.perform(get("/v1/user")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read")))
                         .param("username", "existinguser"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("existinguser"))
@@ -79,7 +83,8 @@ class UserControllerTest {
     void testFindUserByUsername_UserNotFoundException() throws Exception {
         when(userService.findUserByUsername("nonexistentuser")).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/v1/user/nonexistentuser"))
+        mockMvc.perform(get("/v1/user/nonexistentuser")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read"))))
                 .andExpect(status().isNotFound());
     }
 
@@ -93,6 +98,7 @@ class UserControllerTest {
         when(userService.findByUserId(1L)).thenReturn(Optional.of(user));
 
         mockMvc.perform(get("/v1/user/id")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read")))
                         .param("id", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("existinguser"))
@@ -103,7 +109,7 @@ class UserControllerTest {
     void testFindUserById_UserNotFoundException() throws Exception {
         when(userService.findByUserId(1L)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/v1/user/1"))
+        mockMvc.perform(get("/v1/user/1").with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read"))))
                 .andExpect(status().isNotFound());
     }
 
