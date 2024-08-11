@@ -154,4 +154,36 @@ class TaskServiceTest {
         assertEquals("User not found", exception.getMessage());
         verify(taskRepository, times(1)).findByUserId(userId);
     }
+
+    @Test
+    void deleteTaskForUser_ShouldDeleteTask_WhenTaskExists() {
+        // Arrange
+        Long taskId = 1L;
+        Long userId = 1L;
+        Task existingTask = new Task(taskId, "Sample Task", "Sample Description", "2024-09-01", "High", false, userId);
+
+        when(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.of(existingTask));
+
+        // Act
+        taskService.deleteTaskForUser(taskId, userId);
+
+        // Assert
+        verify(taskRepository, times(1)).delete(existingTask);
+    }
+
+    @Test
+    void deleteTaskForUser_ShouldThrowTaskNotFoundException_WhenTaskDoesNotExist() {
+        // Arrange
+        Long taskId = 1L;
+        Long userId = 1L;
+
+        when(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(TaskNotFoundException.class, () -> {
+            taskService.deleteTaskForUser(taskId, userId);
+        });
+
+        verify(taskRepository, times(0)).delete(any(Task.class));
+    }
 }

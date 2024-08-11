@@ -52,4 +52,11 @@ public class TaskService {
 
         return taskRepository.save(updatedExistingTask);
     }
+
+    public void deleteTaskForUser(Long id, Long userId) {
+        Task existingTask = taskRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new TaskNotFoundException(id, userId));
+
+        taskRepository.delete(existingTask);
+    }
 }

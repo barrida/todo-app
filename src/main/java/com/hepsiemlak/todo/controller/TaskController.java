@@ -98,4 +98,18 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
+    @Operation(summary = "Delete an existing task for a user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Task deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Task or user not found")
+    })
+    @DeleteMapping("/tasks/{id}")
+    @PreAuthorize("hasAuthority('SCOPE_message:write')")
+    public ResponseEntity<Void> deleteTask(
+            @PathVariable("id") @NotNull(message = "Task ID is required") Long id,
+            @RequestParam("userId") @NotNull(message = "User ID is required") Long userId) {
+        taskService.deleteTaskForUser(id, userId);
+        return ResponseEntity.noContent().build();
+    }
+
 }

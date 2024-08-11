@@ -302,4 +302,41 @@ class TaskControllerTest {
         verify(taskService, times(1)).updateTaskForUser(taskId, userId, updatedTask);
     }
 
+    @Test
+    @WithMockUser(authorities = "SCOPE_message:write")
+    void deleteTask_ShouldReturnNoContent_WhenTaskIsDeleted() throws Exception {
+        // Arrange
+        Long taskId = 1L;
+        Long userId = 1L;
+
+        // Act & Assert
+        mockMvc.perform(delete("/v1/tasks/{id}", taskId)
+                        .param("userId", String.valueOf(userId))
+                        .with(csrf())  // Include CSRF token if CSRF protection is enabled
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+
+        verify(taskService, times(1)).deleteTaskForUser(taskId, userId);
+    }
+
+    @Test
+    @WithMockUser(authorities = "SCOPE_message:write")
+    void deleteTask_ShouldReturnNotFound_WhenTaskOrUserDoesNotExist() throws Exception {
+        // Arrange
+        Long taskId = 1L;
+        Long userId = 1L;
+
+        doThrow(new TaskNotFoundException(taskId, userId))
+                .when(taskService).deleteTaskForUser(taskId, userId);
+
+        // Act & Assert
+        mockMvc.perform(delete("/v1/tasks/{id}", taskId)
+                        .param("userId", String.valueOf(userId))
+                        .with(csrf())  // Include CSRF token if CSRF protection is enabled
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+
+        verify(taskService, times(1)).deleteTaskForUser(taskId, userId);
+    }
+
 }
