@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,10 +40,11 @@ public class TaskController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Task created successfully",
                     content = @Content(schema = @Schema(implementation = Task.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid input",
-                    content = @Content)
+            @ApiResponse(responseCode = "404", description = "User Not Found",
+                    content = @Content(schema = @Schema(implementation = UserNotFoundException.class)))
     })
     @PostMapping("create-task")
+    @PreAuthorize("hasAuthority('SCOPE_message:write')")
     public ResponseEntity<Task> createTask(@RequestBody @Valid Task task) {
         User user = userService.findByUserId(task.getUserId())
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));

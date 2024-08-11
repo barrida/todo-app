@@ -1,6 +1,7 @@
 package com.hepsiemlak.todo.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hepsiemlak.todo.config.OAuth2ResourceServerSecurityConfiguration;
 import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.Task;
 import com.hepsiemlak.todo.model.User;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -21,6 +23,7 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -29,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author suleyman.yildirim
  */
 @WebMvcTest(TaskController.class)
+@Import(OAuth2ResourceServerSecurityConfiguration.class)
 class TaskControllerTest {
 
     @Autowired
@@ -81,7 +85,8 @@ class TaskControllerTest {
         when(taskService.createTask(task)).thenReturn(createdTask);
 
         // Act & Assert
-        mockMvc.perform(post("/v1/create-task") // Assuming your endpoint is mapped to /tasks
+        mockMvc.perform(post("/v1/create-task")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:write")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(task))) // Convert Task object to JSON
                 .andExpect(status().isCreated())
@@ -101,6 +106,7 @@ class TaskControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/v1/create-task")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:write")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(task)))
                 .andExpect(status().isNotFound())
@@ -115,6 +121,7 @@ class TaskControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/v1/create-task")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:write")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(task)))
                 .andExpect(status().isBadRequest())

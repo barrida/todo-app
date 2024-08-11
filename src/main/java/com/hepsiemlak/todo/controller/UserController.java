@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,9 +37,10 @@ public class UserController {
             @ApiResponse(responseCode = "201", description = "User registered successfully",
                     content = @Content(schema = @Schema(implementation = User.class))),
             @ApiResponse(responseCode = "409", description = "Username or email already exists",
-                    content = @Content)
+                    content = @Content(schema = @Schema(implementation = UserExistsException.class)))
     })
     @PostMapping("register-user")
+    @PreAuthorize("hasAuthority('SCOPE_message:write')")
     public ResponseEntity<User> registerUser(@RequestBody @Valid User user) {
         try {
             User registeredUser = userService.registerUser(user);
@@ -53,9 +55,10 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "User found",
                     content = @Content(schema = @Schema(implementation = User.class))),
             @ApiResponse(responseCode = "404", description = "User not found",
-                    content = @Content)
+                    content = @Content(schema = @Schema(implementation = UserNotFoundException.class)))
     })
     @GetMapping("/user")
+    @PreAuthorize("hasAuthority('SCOPE_message:read')")
     public ResponseEntity<User> findUserByUsername(@RequestParam String username) {
         Optional<User> user = userService.findUserByUsername(username);
         return user.map(ResponseEntity::ok)
@@ -67,9 +70,10 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "User found",
                     content = @Content(schema = @Schema(implementation = User.class))),
             @ApiResponse(responseCode = "404", description = "User not found",
-                    content = @Content)
+                    content = @Content(schema = @Schema(implementation = UserNotFoundException.class)))
     })
     @GetMapping("/user/id")
+    @PreAuthorize("hasAuthority('SCOPE_message:read')")
     public ResponseEntity<User> findUserById(@RequestParam Long id) {
         Optional<User> user = userService.findByUserId(id);
         return user.map(ResponseEntity::ok)
