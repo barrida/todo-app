@@ -81,4 +81,21 @@ public class TaskController {
     }
 
 
+    @Operation(summary = "Update an existing task for a user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task updated successfully",
+                    content = @Content(schema = @Schema(implementation = Task.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid task data provided"),
+            @ApiResponse(responseCode = "404", description = "Task or user not found")
+    })
+    @PutMapping("/tasks/{id}")
+    @PreAuthorize("hasAuthority('SCOPE_message:write')")
+    public ResponseEntity<Task> updateTask(
+            @PathVariable("id") @NotNull(message = "Task ID is required") Long id,
+            @RequestParam("userId") @NotNull(message = "User ID is required") Long userId,
+            @RequestBody @Validated Task updatedTask) {
+        Task task = taskService.updateTaskForUser(id, userId, updatedTask);
+        return ResponseEntity.ok(task);
+    }
+
 }

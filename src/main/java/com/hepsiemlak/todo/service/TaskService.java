@@ -35,4 +35,21 @@ public class TaskService {
         return taskRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new TaskNotFoundException(id, userId));
     }
+
+    public Task updateTaskForUser(Long id, Long userId, Task updatedTask) {
+        Task existingTask = taskRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() ->  new TaskNotFoundException(id, userId));
+
+        Task updatedExistingTask = Task.builder()
+                .id(existingTask.getId())
+                .userId(existingTask.getUserId())
+                .title(updatedTask.getTitle())
+                .description(updatedTask.getDescription())
+                .dueDate(updatedTask.getDueDate())
+                .priority(updatedTask.getPriority())
+                .completed(updatedTask.getCompleted())
+                .build();
+
+        return taskRepository.save(updatedExistingTask);
+    }
 }

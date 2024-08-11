@@ -28,9 +28,9 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -236,4 +236,70 @@ class TaskControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @WithMockUser(authorities = "SCOPE_message:write")
+    void updateTask_ShouldReturnUpdatedTask_WhenValidTaskDataIsProvided() throws Exception {
+        // Arrange
+        Long taskId = 1L;
+        Long userId = 1L;
+        Task updatedTask = Task.builder()
+                .id(taskId)
+                .userId(userId)
+                .title("Updated Task")
+                .description("Updated Description")
+                .dueDate("2024-09-01")
+                .priority("Low")
+                .completed(true)
+                .build();
+
+        when(taskService.updateTaskForUser(taskId, userId, updatedTask)).thenReturn(updatedTask);
+
+        // Act & Assert
+        mockMvc.perform(put("/v1/tasks/{id}", taskId)
+                        .param("userId", userId.toString())
+                        .with(csrf())  // Add CSRF token if CSRF protection is enabled
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\": 1, \"title\": \"Updated Task\", \"description\": \"Updated Description\", \"dueDate\": \"2024-09-01\", \"priority\": \"Low\", \"completed\": true, \"userId\": 1}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(taskId))
+                .andExpect(jsonPath("$.title").value("Updated Task"))
+                .andExpect(jsonPath("$.description").value("Updated Description"))
+                .andExpect(jsonPath("$.dueDate").value("2024-09-01"))
+                .andExpect(jsonPath("$.priority").value("Low"))
+                .andExpect(jsonPath("$.completed").value(true));
+
+        verify(taskService, times(1)).updateTaskForUser(taskId, userId, updatedTask);
+    }
+
+
+    @Test
+    @WithMockUser(authorities = "SCOPE_message:write")
+    void updateTask_ShouldReturnNotFound_WhenTaskOrUserDoesNotExist() throws Exception {
+        // Arrange
+        Long taskId = 1L;
+        Long userId = 1L;
+        Task updatedTask = Task.builder()
+                .id(taskId)
+                .userId(userId)
+                .title("Updated Task")
+                .description("Updated Description")
+                .dueDate("2024-09-01")
+                .priority("Low")
+                .completed(true)
+                .build();
+
+        when(taskService.updateTaskForUser(taskId, userId, updatedTask)).thenThrow(new TaskNotFoundException(taskId, userId));
+
+        // Act & Assert
+        mockMvc.perform(put("/v1/tasks/{id}", taskId)
+                        .param("userId", String.valueOf(userId))
+                        .with(csrf())  // Include CSRF token if CSRF protection is enabled
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\": 1, \"title\": \"Updated Task\", \"description\": \"Updated Description\", \"dueDate\": \"2024-09-01\", \"priority\": \"Low\", \"completed\": true, \"userId\": 1}"))
+                .andExpect(status().isNotFound());
+
+        verify(taskService, times(1)).updateTaskForUser(taskId, userId, updatedTask);
+    }
+
 }
