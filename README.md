@@ -1,5 +1,5 @@
 # Todo-App with Couchbase Setup
-This document provides instructions to build and run the todo-app which depends on a Couchbase database, using Docker. The setup includes configuring the todo-app to communicate with Couchbase via Docker containers.
+This document provides instructions to build and run the todo-app which depends on a Couchbase database and Spring Security Authorization Server, using Docker. The setup includes configuring the todo-app to communicate with Couchbase and Authorization Server via Docker containers.
 
 ## Prerequisites
 Ensure you have the following installed:
