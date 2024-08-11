@@ -17,10 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 /**
@@ -53,5 +52,32 @@ public class TaskController {
         Task createdTask = taskService.createTask(task);
         return ResponseEntity.status(201).body(createdTask);
     }
+
+    @Operation(summary = "Retrieve all tasks for the authenticated user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of tasks",
+                    content = @Content(schema = @Schema(implementation = Task.class)))
+    })
+    @GetMapping
+    @PreAuthorize("hasAuthority('SCOPE_message:read')")
+    public ResponseEntity<List<Task>> getAllTasks(Long userId) {
+        List<Task> tasks = taskService.getTasksByUser(userId);
+        return ResponseEntity.ok(tasks);
+    }
+
+    @Operation(summary = "Retrieve a task by ID for the authenticated user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Task found",
+                    content = @Content(schema = @Schema(implementation = Task.class))),
+            @ApiResponse(responseCode = "404", description = "Task not found",
+                    content = @Content)
+    })
+    @GetMapping("/users/{userId}/tasks/{taskId}")
+    @PreAuthorize("hasAuthority('SCOPE_message:read')")
+    public ResponseEntity<Task> getTaskByIdAndUser(@PathVariable Long taskId, @PathVariable Long userId) {
+        Task task = taskService.getTaskByIdAndUser(taskId, userId);
+        return ResponseEntity.ok(task);
+    }
+
 
 }

@@ -2,6 +2,7 @@ package com.hepsiemlak.todo.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hepsiemlak.todo.config.OAuth2ResourceServerSecurityConfiguration;
+import com.hepsiemlak.todo.exception.TaskNotFoundException;
 import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.Task;
 import com.hepsiemlak.todo.model.User;
@@ -24,6 +25,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -135,5 +137,36 @@ class TaskControllerTest {
                         "Priority is required",
                         "User id is required",
                         "Status is required")));
+    }
+
+    @Test
+    void testGetTaskByIdAndUser_Success() throws Exception {
+        // Arrange
+        when(taskService.getTaskByIdAndUser(1L, 1L)).thenReturn(task);
+
+        // Act & Assert
+        mockMvc.perform(get("/v1/users/1/tasks/1")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read")))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.title").value(task.getTitle()))
+                .andExpect(jsonPath("$.description").value(task.getDescription()))
+                .andExpect(jsonPath("$.dueDate").value(task.getDueDate()))
+                .andExpect(jsonPath("$.priority").value(task.getPriority()))
+                .andExpect(jsonPath("$.completed").value(false))
+                .andExpect(jsonPath("$.userId").value(task.getUserId()));
+    }
+
+    @Test
+    void testGetTaskByIdAndUser_TaskNotFound() throws Exception {
+        // Arrange
+        when(taskService.getTaskByIdAndUser(1L, 1L)).thenThrow(new TaskNotFoundException(1L, 1L));
+
+        // Act & Assert
+        mockMvc.perform(get("/v1/users/1/tasks/1")
+                        .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read")))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }
