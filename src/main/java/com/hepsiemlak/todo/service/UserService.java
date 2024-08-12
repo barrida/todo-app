@@ -17,10 +17,9 @@ public class UserService {
     private final UserRepository userRepository;
 
     public User registerUser(User user) {
-        Optional<User> existingUserByUsername = userRepository.findByUsername(user.getUsername());
-        Optional<User> existingUserByEmail = userRepository.findByEmail(user.getEmail());
+        Optional<User> existingUserId = userRepository.findByUserId(user.getUserId());
 
-        if (existingUserByUsername.isPresent() || existingUserByEmail.isPresent()) {
+        if (existingUserId.isPresent()) {
             throw new UserExistsException(ErrorCode.USER_EXISTS);
         }
         return userRepository.save(user);
@@ -30,7 +29,7 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
-    public Optional<User> findByUserId(Long id) {
+    public Optional<User> findByUserId(String id) {
         return userRepository.findByUserId(id);
     }
 }

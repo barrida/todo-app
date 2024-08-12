@@ -25,7 +25,7 @@ public class Task {
     @Id
     @GeneratedValue(strategy = GenerationStrategy.UNIQUE)
     @NotNull(message = "Id is required")
-    private Long id;
+    private String taskId;
 
     @Field
     @NotBlank(message = "Title is required")
@@ -49,5 +49,5 @@ public class Task {
 
     @Field
     @NotNull(message = "User id is required")
-    private Long userId;
+    private String userId;
 }

@@ -19,20 +19,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.hepsiemlak.todo.contants.TodoTestConstants.TASK_ID;
+import static com.hepsiemlak.todo.contants.TodoTestConstants.USER_ID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-
 /**
  * @author suleyman.yildirim
  */
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
-
     @Mock
     private TaskRepository taskRepository;
-
 
     @InjectMocks
     private TaskService taskService;
@@ -42,13 +41,13 @@ class TaskServiceTest {
     @BeforeEach
     public void setUp() {
         task = Task.builder()
-                .id(1L)
+                .taskId(TASK_ID)
                 .title("title")
                 .description("description")
                 .dueDate("2024-08-30")
                 .priority("High")
                 .completed(false)
-                .userId(1L)
+                .userId(USER_ID)
                 .build();
     }
 
@@ -59,16 +58,15 @@ class TaskServiceTest {
 
     @Test
     void testCreateTask_Success() {
-
         // Arrange
         Task created = Task.builder()
-                .id(1L)
+                .taskId(TASK_ID)
                 .title("title")
                 .description("description")
                 .dueDate("2024-08-30")
                 .priority("High")
                 .completed(false)
-                .userId(1L)
+                .userId(USER_ID)
                 .build();
 
         Mockito.when(taskRepository.save(any(Task.class))).thenReturn(created);
@@ -84,16 +82,16 @@ class TaskServiceTest {
     @Test
     void testGetTaskByIdAndUser_Success() {
         // Arrange
-        Long taskId = task.getId();
-        Long userId = task.getUserId();
-        Mockito.when(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.of(task));
+        String  taskId = task.getTaskId();
+        String userId = task.getUserId();
+        Mockito.when(taskRepository.findByTaskIdAndUserId(taskId, userId)).thenReturn(Optional.of(task));
 
         // Act
         Task foundTask = taskService.getTaskByIdAndUser(taskId, userId);
 
         // Assert
         assertNotNull(foundTask);
-        assertEquals(taskId, foundTask.getId());
+        assertEquals(taskId, foundTask.getTaskId());
         assertEquals("title", foundTask.getTitle());
         assertEquals("description", foundTask.getDescription());
         assertEquals("2024-08-30", foundTask.getDueDate());
@@ -105,9 +103,9 @@ class TaskServiceTest {
     @Test
     void testGetTaskByIdAndUser_TaskNotFound() {
         // Arrange
-        Long taskId = 1L;
-        Long userId = 123L;
-        Mockito.when(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.empty());
+        String taskId = "1";
+        String userId = "123";
+        Mockito.when(taskRepository.findByTaskIdAndUserId(taskId, userId)).thenReturn(Optional.empty());
 
         // Act
         TaskNotFoundException exception = assertThrows(TaskNotFoundException.class, () -> {
@@ -122,50 +120,46 @@ class TaskServiceTest {
     @Test
     void getTasksByUser_ShouldReturnTasks_WhenUserExists() {
         // Arrange
-        Long userId = 1L;
         List<Task> expectedTasks = Arrays.asList(
-                new Task(1L, "Task 1", "Description 1", "2024-08-15", "High", false, 1L),
-                new Task(2L, "Task 2", "Description 2", "2024-08-16", "Medium", true, 1L)
+                new Task("1", "Task 1", "Description 1", "2024-08-15", "High", false, "1"),
+                new Task("2", "Task 2", "Description 2", "2024-08-16", "Medium", true, "1")
         );
 
-        when(taskRepository.findByUserId(userId)).thenReturn(Optional.of(expectedTasks));
+        when(taskRepository.findByUserId(USER_ID)).thenReturn(Optional.of(expectedTasks));
 
         // Act
-        List<Task> actualTasks = taskService.getTasksByUser(userId);
+        List<Task> actualTasks = taskService.getTasksByUser(USER_ID);
 
         // Assert
         assertNotNull(actualTasks);
         assertEquals(expectedTasks.size(), actualTasks.size());
         assertEquals(expectedTasks, actualTasks);
-        verify(taskRepository, times(1)).findByUserId(userId);
+        verify(taskRepository, times(1)).findByUserId(USER_ID);
     }
 
     @Test
     void getTasksByUser_ShouldThrowUserNotFoundException_WhenUserDoesNotExist() {
         // Arrange
-        Long userId = 1L;
-        when(taskRepository.findByUserId(userId)).thenReturn(Optional.empty());
+        when(taskRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
 
         // Act & Assert
         UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
-            taskService.getTasksByUser(userId);
+            taskService.getTasksByUser(USER_ID);
         });
 
         assertEquals("User not found", exception.getMessage());
-        verify(taskRepository, times(1)).findByUserId(userId);
+        verify(taskRepository, times(1)).findByUserId(USER_ID);
     }
 
     @Test
     void deleteTaskForUser_ShouldDeleteTask_WhenTaskExists() {
         // Arrange
-        Long taskId = 1L;
-        Long userId = 1L;
-        Task existingTask = new Task(taskId, "Sample Task", "Sample Description", "2024-09-01", "High", false, userId);
+        Task existingTask = new Task(TASK_ID, "Sample Task", "Sample Description", "2024-09-01", "High", false, USER_ID);
 
-        when(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.findByTaskIdAndUserId(TASK_ID, USER_ID)).thenReturn(Optional.of(existingTask));
 
         // Act
-        taskService.deleteTaskForUser(taskId, userId);
+        taskService.deleteTaskForUser(TASK_ID, USER_ID);
 
         // Assert
         verify(taskRepository, times(1)).delete(existingTask);
@@ -174,14 +168,12 @@ class TaskServiceTest {
     @Test
     void deleteTaskForUser_ShouldThrowTaskNotFoundException_WhenTaskDoesNotExist() {
         // Arrange
-        Long taskId = 1L;
-        Long userId = 1L;
 
-        when(taskRepository.findByIdAndUserId(taskId, userId)).thenReturn(Optional.empty());
+        when(taskRepository.findByTaskIdAndUserId(TASK_ID, USER_ID)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(TaskNotFoundException.class, () -> {
-            taskService.deleteTaskForUser(taskId, userId);
+            taskService.deleteTaskForUser(TASK_ID, USER_ID);
         });
 
         verify(taskRepository, times(0)).delete(any(Task.class));

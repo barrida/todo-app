@@ -118,10 +118,10 @@ Authorization server should return a JSON response with an access token:
 
 ### Step 4: Send an HTTP Request
 
-Now that you have the access token, you can use it to send a http request. HTTP POST to Register a User to the `/v1/register-user` endpoint:
+Now that you have the access token, you can use it to send a http request. HTTP POST to Register a User to the `/v1/users` endpoint:
 
 ```shell
-curl -X POST http://localhost:8080/v1/register-user \
+curl -X POST http://localhost:8080/v1/users \
     -H "Authorization: Bearer <your_access_token>" \
     -H "Content-Type: application/json" \
     -d '{

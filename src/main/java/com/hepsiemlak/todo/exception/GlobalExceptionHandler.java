@@ -21,8 +21,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleUserNotFoundException(UserNotFoundException ex) {
         Map<String, Object> errorDetails = new HashMap<>();
-        errorDetails.put("error", "User Not Found");
-        errorDetails.put("message", ex.getMessage());
+        errorDetails.put("error", ErrorCode.USER_NOT_FOUND.getCode());
+        errorDetails.put("message", ErrorCode.USER_NOT_FOUND.getMessage());
         return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
     }
 
@@ -43,7 +43,19 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TaskNotFoundException.class)
-    public ResponseEntity<String> handleTaskNotFoundException(TaskNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    public ResponseEntity<Map<String, Object>> handleTaskNotFoundException(TaskNotFoundException ex) {
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("error", ErrorCode.TASK_NOT_FOUND.getCode());
+        errorDetails.put("message", ErrorCode.TASK_NOT_FOUND.getMessage());
+        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(UserExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleUserExistsException(UserExistsException ex) {
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("error", ErrorCode.USER_EXISTS.getCode());
+        errorDetails.put("message", ErrorCode.USER_EXISTS.getMessage());
+        return new ResponseEntity<>(errorDetails, HttpStatus.CONFLICT);
+    }
+
 }

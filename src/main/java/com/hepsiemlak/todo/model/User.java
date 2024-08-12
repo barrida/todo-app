@@ -28,7 +28,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationStrategy.UNIQUE)
     @NotNull(message = "Id is required")
-    private Long userId;
+    private String userId;
 
     @Field
     @NotBlank(message = "Username is required")

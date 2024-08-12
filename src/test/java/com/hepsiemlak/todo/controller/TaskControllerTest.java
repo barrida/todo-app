@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static com.hepsiemlak.todo.contants.TodoTestConstants.TASK_ID;
+import static com.hepsiemlak.todo.contants.TodoTestConstants.USER_ID;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,17 +60,17 @@ class TaskControllerTest {
     @BeforeEach
     public void setup() {
         task = Task.builder()
-                .id(1L)
+                .taskId(TASK_ID)
                 .title("title")
                 .description("description")
                 .dueDate("2024-08-30")
                 .priority("High")
                 .completed(false)
-                .userId(1L)
+                .userId(USER_ID)
                 .build();
 
         user = User.builder()
-                .userId(1L)
+                .userId(USER_ID)
                 .email("sy@example.com")
                 .tasks(List.of(task))
                 .build();
@@ -77,26 +79,17 @@ class TaskControllerTest {
     @Test
     void testCreateTask_Success() throws Exception {
         // Arrange
-        Task createdTask = Task.builder()
-                .id(1L)
-                .title("title")
-                .description("description")
-                .dueDate("2024-08-30")
-                .priority("High")
-                .completed(false)
-                .userId(1L)
-                .build();
 
-        when(userService.findByUserId(1L)).thenReturn(Optional.of(user));
-        when(taskService.createTask(task)).thenReturn(createdTask);
+        when(userService.findByUserId(anyString())).thenReturn(Optional.of(user));
+        when(taskService.createTask(any(Task.class))).thenReturn(task);
 
         // Act & Assert
-        mockMvc.perform(post("/v1/create-task")
+        mockMvc.perform(post("/v1/tasks")
                         .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:write")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(task))) // Convert Task object to JSON
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value("1"))
+                .andExpect(jsonPath("$.taskId").value("1"))
                 .andExpect(jsonPath("$.title").value("title"))
                 .andExpect(jsonPath("$.description").value("description"))
                 .andExpect(jsonPath("$.dueDate").value("2024-08-30"))
@@ -108,10 +101,10 @@ class TaskControllerTest {
     @Test
     void testCreateTask_UserNotFound() throws Exception {
         // Arrange
-        when(userService.findByUserId(2L)).thenReturn(Optional.empty());
+        when(userService.findByUserId(anyString())).thenReturn(Optional.empty());
 
         // Act & Assert
-        mockMvc.perform(post("/v1/create-task")
+        mockMvc.perform(post("/v1/tasks")
                         .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:write")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(task)))
@@ -126,7 +119,7 @@ class TaskControllerTest {
                 .build();
 
         // Act & Assert
-        mockMvc.perform(post("/v1/create-task")
+        mockMvc.perform(post("/v1/tasks")
                         .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:write")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(task)))
@@ -146,14 +139,14 @@ class TaskControllerTest {
     @Test
     void testGetTaskByIdAndUser_Success() throws Exception {
         // Arrange
-        when(taskService.getTaskByIdAndUser(1L, 1L)).thenReturn(task);
+        when(taskService.getTaskByIdAndUser(anyString(), anyString())).thenReturn(task);
 
         // Act & Assert
         mockMvc.perform(get("/v1/users/1/tasks/1")
                         .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read")))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.taskId").value(1L))
                 .andExpect(jsonPath("$.title").value(task.getTitle()))
                 .andExpect(jsonPath("$.description").value(task.getDescription()))
                 .andExpect(jsonPath("$.dueDate").value(task.getDueDate()))
@@ -165,7 +158,7 @@ class TaskControllerTest {
     @Test
     void testGetTaskByIdAndUser_TaskNotFound() throws Exception {
         // Arrange
-        when(taskService.getTaskByIdAndUser(1L, 1L)).thenThrow(new TaskNotFoundException(1L, 1L));
+        when(taskService.getTaskByIdAndUser(anyString(), anyString())).thenThrow(new TaskNotFoundException("1", "1"));
 
         // Act & Assert
         mockMvc.perform(get("/v1/users/1/tasks/1")
@@ -178,54 +171,38 @@ class TaskControllerTest {
     @WithMockUser(authorities = "SCOPE_message:read")
     void getAllTasks_ShouldReturnTasks_WhenUserExists() throws Exception {
         // Arrange
-        Long userId = 1L;
         List<Task> tasks = Arrays.asList(
-                new Task(1L, "Task 1", "Description 1", "2024-08-15", "High", false, userId),
-                new Task(2L, "Task 2", "Description 2", "2024-08-16", "Medium", true, userId)
+                new Task("1", "Task 1", "Description 1", "2024-08-15", "High", false, USER_ID),
+                new Task("2", "Task 2", "Description 2", "2024-08-16", "Medium", true, USER_ID)
         );
 
-        when(taskService.getTasksByUser(userId)).thenReturn(tasks);
+        when(taskService.getTasksByUser(USER_ID)).thenReturn(tasks);
 
         // Act & Assert
         mockMvc.perform(get("/v1/tasks")
-                        .param("userId", userId.toString())
+                        .param("userId", USER_ID)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].title").value("Task 1"))
                 .andExpect(jsonPath("$[1].title").value("Task 2"));
 
-        verify(taskService, times(1)).getTasksByUser(userId);
+        verify(taskService, times(1)).getTasksByUser(USER_ID);
     }
 
     @Test
     @WithMockUser(authorities = "SCOPE_message:read")
     void getAllTasks_ShouldReturnNotFound_WhenUserDoesNotExist() throws Exception {
         // Arrange
-        Long userId = 1L;
-
-        when(taskService.getTasksByUser(userId)).thenThrow(new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+        when(taskService.getTasksByUser(anyString())).thenThrow(new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
 
         // Act & Assert
         mockMvc.perform(get("/v1/tasks")
-                        .param("userId", userId.toString())
+                        .param("userId", USER_ID)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 
-        verify(taskService, times(1)).getTasksByUser(userId);
-    }
-
-    @Test
-    @WithMockUser(authorities = "SCOPE_message:read")
-    void getAllTasks_ShouldReturnBadRequest_WhenInvalidUserIdProvided() throws Exception {
-        // Arrange
-        String invalidUserId = "abc";  // Non-numeric userId
-
-        // Act & Assert
-        mockMvc.perform(get("/v1/tasks")
-                        .param("userId", invalidUserId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+        verify(taskService, times(1)).getTasksByUser(USER_ID);
     }
 
     @Test
@@ -241,11 +218,9 @@ class TaskControllerTest {
     @WithMockUser(authorities = "SCOPE_message:write")
     void updateTask_ShouldReturnUpdatedTask_WhenValidTaskDataIsProvided() throws Exception {
         // Arrange
-        Long taskId = 1L;
-        Long userId = 1L;
         Task updatedTask = Task.builder()
-                .id(taskId)
-                .userId(userId)
+                .taskId(TASK_ID)
+                .userId(USER_ID)
                 .title("Updated Task")
                 .description("Updated Description")
                 .dueDate("2024-09-01")
@@ -253,23 +228,23 @@ class TaskControllerTest {
                 .completed(true)
                 .build();
 
-        when(taskService.updateTaskForUser(taskId, userId, updatedTask)).thenReturn(updatedTask);
+        when(taskService.updateTaskForUser(anyString(), any(Task.class))).thenReturn(updatedTask);
 
         // Act & Assert
-        mockMvc.perform(put("/v1/tasks/{id}", taskId)
-                        .param("userId", userId.toString())
+        mockMvc.perform(put("/v1/tasks/{id}", TASK_ID)
+                        .param("userId", USER_ID)
                         .with(csrf())  // Add CSRF token if CSRF protection is enabled
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\": 1, \"title\": \"Updated Task\", \"description\": \"Updated Description\", \"dueDate\": \"2024-09-01\", \"priority\": \"Low\", \"completed\": true, \"userId\": 1}"))
+                        .content("{\"taskId\": 1, \"title\": \"Updated Task\", \"description\": \"Updated Description\", \"dueDate\": \"2024-09-01\", \"priority\": \"Low\", \"completed\": true, \"userId\": 1}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(taskId))
+                .andExpect(jsonPath("$.taskId").value(TASK_ID))
                 .andExpect(jsonPath("$.title").value("Updated Task"))
                 .andExpect(jsonPath("$.description").value("Updated Description"))
                 .andExpect(jsonPath("$.dueDate").value("2024-09-01"))
                 .andExpect(jsonPath("$.priority").value("Low"))
                 .andExpect(jsonPath("$.completed").value(true));
 
-        verify(taskService, times(1)).updateTaskForUser(taskId, userId, updatedTask);
+        verify(taskService, times(1)).updateTaskForUser(TASK_ID, updatedTask);
     }
 
 
@@ -277,11 +252,9 @@ class TaskControllerTest {
     @WithMockUser(authorities = "SCOPE_message:write")
     void updateTask_ShouldReturnNotFound_WhenTaskOrUserDoesNotExist() throws Exception {
         // Arrange
-        Long taskId = 1L;
-        Long userId = 1L;
         Task updatedTask = Task.builder()
-                .id(taskId)
-                .userId(userId)
+                .taskId(TASK_ID)
+                .userId(USER_ID)
                 .title("Updated Task")
                 .description("Updated Description")
                 .dueDate("2024-09-01")
@@ -289,54 +262,49 @@ class TaskControllerTest {
                 .completed(true)
                 .build();
 
-        when(taskService.updateTaskForUser(taskId, userId, updatedTask)).thenThrow(new TaskNotFoundException(taskId, userId));
+        when(taskService.updateTaskForUser(TASK_ID, updatedTask)).thenThrow(new TaskNotFoundException(TASK_ID, USER_ID));
 
         // Act & Assert
-        mockMvc.perform(put("/v1/tasks/{id}", taskId)
-                        .param("userId", String.valueOf(userId))
+        mockMvc.perform(put("/v1/tasks/{id}", TASK_ID)
+                        .param("userId", String.valueOf(USER_ID))
                         .with(csrf())  // Include CSRF token if CSRF protection is enabled
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\": 1, \"title\": \"Updated Task\", \"description\": \"Updated Description\", \"dueDate\": \"2024-09-01\", \"priority\": \"Low\", \"completed\": true, \"userId\": 1}"))
+                        .content("{\"taskId\": 1, \"title\": \"Updated Task\", \"description\": \"Updated Description\", \"dueDate\": \"2024-09-01\", \"priority\": \"Low\", \"completed\": true, \"userId\": 1}"))
                 .andExpect(status().isNotFound());
 
-        verify(taskService, times(1)).updateTaskForUser(taskId, userId, updatedTask);
+        verify(taskService, times(1)).updateTaskForUser(TASK_ID,  updatedTask);
     }
 
     @Test
     @WithMockUser(authorities = "SCOPE_message:write")
     void deleteTask_ShouldReturnNoContent_WhenTaskIsDeleted() throws Exception {
-        // Arrange
-        Long taskId = 1L;
-        Long userId = 1L;
 
         // Act & Assert
-        mockMvc.perform(delete("/v1/tasks/{id}", taskId)
-                        .param("userId", String.valueOf(userId))
+        mockMvc.perform(delete("/v1/tasks/{id}", TASK_ID)
+                        .param("userId", String.valueOf(USER_ID))
                         .with(csrf())  // Include CSRF token if CSRF protection is enabled
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
 
-        verify(taskService, times(1)).deleteTaskForUser(taskId, userId);
+        verify(taskService, times(1)).deleteTaskForUser(TASK_ID, USER_ID);
     }
 
     @Test
     @WithMockUser(authorities = "SCOPE_message:write")
     void deleteTask_ShouldReturnNotFound_WhenTaskOrUserDoesNotExist() throws Exception {
         // Arrange
-        Long taskId = 1L;
-        Long userId = 1L;
 
-        doThrow(new TaskNotFoundException(taskId, userId))
-                .when(taskService).deleteTaskForUser(taskId, userId);
+        doThrow(new TaskNotFoundException(TASK_ID, USER_ID))
+                .when(taskService).deleteTaskForUser(TASK_ID, USER_ID);
 
         // Act & Assert
-        mockMvc.perform(delete("/v1/tasks/{id}", taskId)
-                        .param("userId", String.valueOf(userId))
+        mockMvc.perform(delete("/v1/tasks/{id}", TASK_ID)
+                        .param("userId", String.valueOf(USER_ID))
                         .with(csrf())  // Include CSRF token if CSRF protection is enabled
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
 
-        verify(taskService, times(1)).deleteTaskForUser(taskId, userId);
+        verify(taskService, times(1)).deleteTaskForUser(TASK_ID, USER_ID);
     }
 
 }
