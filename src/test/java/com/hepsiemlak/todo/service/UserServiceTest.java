@@ -1,8 +1,12 @@
 package com.hepsiemlak.todo.service;
 
+import com.hepsiemlak.todo.exception.ErrorCode;
 import com.hepsiemlak.todo.exception.UserExistsException;
+import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.User;
+import com.hepsiemlak.todo.repository.TaskRepository;
 import com.hepsiemlak.todo.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
+import static com.hepsiemlak.todo.contants.TodoTestConstants.USER_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -25,33 +30,27 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private TaskRepository taskRepository;
+
     @InjectMocks
     private UserService userService;
 
-    @Test
-    void testRegisterUser_UserAlreadyExistsByUsername_ThrowsException() {
-        // Arrange
-        User user = new User();
-        user.setUsername("existingUser");
-        user.setEmail("newemail@example.com");
+    private User user;
 
-        Mockito.when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(UserExistsException.class, () -> userService.registerUser(user));
-        Mockito.verify(userRepository, never()).save(user);
+    @BeforeEach
+    void setUp() {
+        user = User.builder()
+                .userId(USER_ID)
+                .username("newuser")
+                .email("newuser@example.com")
+                .build();
     }
 
     @Test
-    void testRegisterUser_UserAlreadyExistsByEmail_ThrowsException() {
+    void testRegisterUser_UserAlreadyExistsByUserId_ThrowsException() {
         // Arrange
-        User user = new User();
-        user.setUsername("newuser");
-        user.setEmail("existingemail@example.com");
-
-        when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.empty());
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(new User()));
+        when(userRepository.findByUserId(anyString())).thenReturn(Optional.of(user));
 
         // Act & Assert
         assertThrows(UserExistsException.class, () -> userService.registerUser(user));
@@ -61,12 +60,7 @@ class UserServiceTest {
     @Test
     void testRegisterUser_UserDoesNotExist_SavesUser() {
         // Arrange
-        User user = new User();
-        user.setUsername("newuser");
-        user.setEmail("newemail@example.com");
-
-        when(userRepository.findByUsername(user.getUsername())).thenReturn(Optional.empty());
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
+        when(userRepository.findByUserId(anyString())).thenReturn(Optional.empty());
         when(userRepository.save(user)).thenReturn(user);
 
         // Act
@@ -87,57 +81,40 @@ class UserServiceTest {
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
 
         // Act
-        Optional<User> result = userService.findUserByUsername(username);
+        var result = userService.findUserByUsername(username);
 
         // Assert
-        assertEquals(Optional.of(user), result);
+        assertEquals(user, result);
         Mockito.verify(userRepository, times(1)).findByUsername(username);
     }
 
     @Test
-    void testFindUserByUsername_UserDoesNotExist_ReturnsEmptyOptional() {
+    void testFindUserByUsername_UserNotFoundException() {
         // Arrange
-        String username = "nonExistingUser";
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
 
-        when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
-
-        // Act
-        Optional<User> result = userService.findUserByUsername(username);
+        // Act & Assert
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
+            userService.findUserByUsername("nonexistentuser");
+        });
 
         // Assert
-        assertEquals(Optional.empty(), result);
-        Mockito.verify(userRepository, times(1)).findByUsername(username);
+        assert(exception.getErrorCode()).equals(ErrorCode.USER_NOT_FOUND);
+        assert(exception.getMessage()).equals("User with username nonexistentuser not found.");
     }
 
     @Test
-    void testFindByUserId_UserExists_ReturnsUser() {
+    void testFindByUserId_UserNotFoundException() {
         // Arrange
-        Long userId = 1L;
-        User user = new User();
-        user.setUserId(userId);
+        when(userRepository.findByUserId(anyString())).thenReturn(Optional.empty());
 
-        when(userRepository.findByUserId(userId)).thenReturn(Optional.of(user));
-
-        // Act
-        Optional<User> result = userService.findByUserId(userId);
+        // Act & Assert
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
+            userService.findByUserId("nonexistentId");
+        });
 
         // Assert
-        assertEquals(Optional.of(user), result);
-        Mockito.verify(userRepository, times(1)).findByUserId(userId);
-    }
-
-    @Test
-    void testFindByUserId_UserDoesNotExist_ReturnsEmptyOptional() {
-        // Arrange
-        Long userId = 1L;
-
-        when(userRepository.findByUserId(userId)).thenReturn(Optional.empty());
-
-        // Act
-        Optional<User> result = userService.findByUserId(userId);
-
-        // Assert
-        assertEquals(Optional.empty(), result);
-        Mockito.verify(userRepository, times(1)).findByUserId(userId);
+        assert(exception.getErrorCode()).equals(ErrorCode.USER_NOT_FOUND);
+        assert(exception.getMessage()).equals("User with ID nonexistentId not found.");
     }
 }

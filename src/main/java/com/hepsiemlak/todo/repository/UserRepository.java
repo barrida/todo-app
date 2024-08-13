@@ -2,15 +2,15 @@ package com.hepsiemlak.todo.repository;
 
 
 import com.hepsiemlak.todo.model.User;
-import org.springframework.data.couchbase.repository.CouchbaseRepository;
+import org.springframework.data.repository.CrudRepository;
 
 import java.util.Optional;
 
 /**
  * @author suleyman.yildirim
  */
-public interface UserRepository extends CouchbaseRepository<User, Long> {
+public interface UserRepository extends CrudRepository<User, Long> {
     Optional<User> findByUsername(String username);
-    Optional<User> findByUserId(Long id);
-    Optional<User> findByEmail(String email);
+
+    Optional<User> findByUserId(String userId);
 }

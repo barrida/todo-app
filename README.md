@@ -118,10 +118,10 @@ Authorization server should return a JSON response with an access token:
 
 ### Step 4: Send an HTTP Request
 
-Now that you have the access token, you can use it to send a http request. HTTP POST to Register a User to the `/v1/register-user` endpoint:
+Now that you have the access token, you can use it to send a http request. HTTP POST to Register a User to the `/v1/users` endpoint:
 
 ```shell
-curl -X POST http://localhost:8080/v1/register-user \
+curl -X POST http://localhost:8080/v1/users \
     -H "Authorization: Bearer <your_access_token>" \
     -H "Content-Type: application/json" \
     -d '{
@@ -135,3 +135,7 @@ curl -X POST http://localhost:8080/v1/register-user \
 # OpenAPI Swagger endpoint definition
 
 Browse to Swagger to analyse endpoints http://localhost:8080/swagger-ui/index.html#/
+
+# Test Endpoints via Postman
+
+Import `todo-app collection.postman_collection.json` collection to Postman. All endpoints including JWT token generation are represented with sample data.

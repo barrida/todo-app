@@ -1,6 +1,5 @@
 package com.hepsiemlak.todo.controller;
 
-import com.hepsiemlak.todo.exception.ErrorCode;
 import com.hepsiemlak.todo.exception.TaskNotFoundException;
 import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.Task;
@@ -37,37 +36,37 @@ public class TaskController {
     private final TaskService taskService;
     private final UserService userService;
 
-    @Operation(summary = "Create a new task for the authenticated user")
+    @Operation(summary = "Create a new task for a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Task created successfully",
                     content = @Content(schema = @Schema(implementation = Task.class))),
             @ApiResponse(responseCode = "404", description = "User Not Found",
                     content = @Content(schema = @Schema(implementation = UserNotFoundException.class)))
     })
-    @PostMapping("create-task")
+    @PostMapping("tasks")
     @PreAuthorize("hasAuthority('SCOPE_message:write')")
     public ResponseEntity<Task> createTask(@RequestBody @Valid Task task) {
-        User user = userService.findByUserId(task.getUserId())
-                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
-
+        User user = userService.findByUserId(task.getUserId());
         task.setUserId(user.getUserId());
         Task createdTask = taskService.createTask(task);
         return ResponseEntity.status(201).body(createdTask);
     }
 
-    @Operation(summary = "Retrieve all tasks for the authenticated user")
+    @Operation(summary = "Retrieve all tasks for a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List of tasks",
-                    content = @Content(schema = @Schema(implementation = Task.class)))
+                    content = @Content(schema = @Schema(implementation = Task.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(schema = @Schema(implementation = UserNotFoundException.class)))
     })
     @GetMapping("/tasks")
     @PreAuthorize("hasAuthority('SCOPE_message:read')")
-    public ResponseEntity<List<Task>> getAllTasksByUser(@RequestParam("userId") @NotNull(message = "User ID is required") Long userId) {
+    public ResponseEntity<List<Task>> getAllTasksByUser(@RequestParam("userId") @NotNull(message = "User ID is required") String userId) {
         List<Task> tasks = taskService.getTasksByUser(userId);
         return ResponseEntity.ok(tasks);
     }
 
-    @Operation(summary = "Retrieve a task by ID for the authenticated user")
+    @Operation(summary = "Retrieve a task by ID for a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Task found",
                     content = @Content(schema = @Schema(implementation = Task.class))),
@@ -76,7 +75,7 @@ public class TaskController {
     })
     @GetMapping("/users/{userId}/tasks/{taskId}")
     @PreAuthorize("hasAuthority('SCOPE_message:read')")
-    public ResponseEntity<Task> getTaskByIdAndUser(@PathVariable Long taskId, @PathVariable Long userId) {
+    public ResponseEntity<Task> getTaskByIdAndUser(@PathVariable String taskId, @PathVariable String userId) {
         Task task = taskService.getTaskByIdAndUser(taskId, userId);
         return ResponseEntity.ok(task);
     }
@@ -89,18 +88,14 @@ public class TaskController {
             @ApiResponse(responseCode = "400", description = "Invalid task data provided"),
             @ApiResponse(responseCode = "404", description = "Task not found",
                     content = @Content(schema = @Schema(implementation = TaskNotFoundException.class))
-            ),
-            @ApiResponse(responseCode = "404", description = "User not found",
-                    content = @Content(schema = @Schema(implementation = UserNotFoundException.class))
             )
     })
     @PutMapping("/tasks/{id}")
     @PreAuthorize("hasAuthority('SCOPE_message:write')")
     public ResponseEntity<Task> updateTask(
-            @PathVariable("id") @NotNull(message = "Task ID is required") Long id,
-            @RequestParam("userId") @NotNull(message = "User ID is required") Long userId,
+            @PathVariable("id") @NotNull(message = "Task ID is required") String id,
             @RequestBody @Validated Task updatedTask) {
-        Task task = taskService.updateTaskForUser(id, userId, updatedTask);
+        Task task = taskService.updateTaskForUser(id, updatedTask);
         return ResponseEntity.ok(task);
     }
 
@@ -117,8 +112,8 @@ public class TaskController {
     @DeleteMapping("/tasks/{id}")
     @PreAuthorize("hasAuthority('SCOPE_message:write')")
     public ResponseEntity<Void> deleteTask(
-            @PathVariable("id") @NotNull(message = "Task ID is required") Long id,
-            @RequestParam("userId") @NotNull(message = "User ID is required") Long userId) {
+            @PathVariable("id") @NotNull(message = "Task ID is required") String id,
+            @RequestParam("userId") @NotNull(message = "User ID is required") String userId) {
         taskService.deleteTaskForUser(id, userId);
         return ResponseEntity.noContent().build();
     }

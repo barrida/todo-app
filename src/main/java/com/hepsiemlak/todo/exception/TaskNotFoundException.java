@@ -5,7 +5,7 @@ package com.hepsiemlak.todo.exception;
  */
 
 public class TaskNotFoundException extends BaseException{
-    public TaskNotFoundException(Long id, Long userId) {
-        super(ErrorCode.TASK_NOT_FOUND, "Task with ID " + id + " not found for user " + userId);
+    public TaskNotFoundException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
     }
 }

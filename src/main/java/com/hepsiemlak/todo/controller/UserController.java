@@ -1,6 +1,5 @@
 package com.hepsiemlak.todo.controller;
 
-import com.hepsiemlak.todo.exception.ErrorCode;
 import com.hepsiemlak.todo.exception.UserExistsException;
 import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.User;
@@ -18,8 +17,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-
 /**
  * @author suleyman.yildirim
  */
@@ -36,18 +33,14 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "User registered successfully",
                     content = @Content(schema = @Schema(implementation = User.class))),
-            @ApiResponse(responseCode = "409", description = "Username or email already exists",
+            @ApiResponse(responseCode = "409", description = "User already exists",
                     content = @Content(schema = @Schema(implementation = UserExistsException.class)))
     })
-    @PostMapping("register-user")
+    @PostMapping("users")
     @PreAuthorize("hasAuthority('SCOPE_message:write')")
     public ResponseEntity<User> registerUser(@RequestBody @Valid User user) {
-        try {
-            User registeredUser = userService.registerUser(user);
-            return ResponseEntity.status(201).body(registeredUser);
-        } catch (UserExistsException e) {
-            return ResponseEntity.status(409).build();
-        }
+        var registeredUser = userService.registerUser(user);
+        return ResponseEntity.status(201).body(registeredUser);
     }
 
     @Operation(summary = "Find a user by username")
@@ -60,9 +53,8 @@ public class UserController {
     @GetMapping("/user")
     @PreAuthorize("hasAuthority('SCOPE_message:read')")
     public ResponseEntity<User> findUserByUsername(@RequestParam String username) {
-        Optional<User> user = userService.findUserByUsername(username);
-        return user.map(ResponseEntity::ok)
-                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+        var user = userService.findUserByUsername(username);
+        return ResponseEntity.ok(user);
     }
 
     @Operation(summary = "Find a user by ID")
@@ -74,9 +66,8 @@ public class UserController {
     })
     @GetMapping("/user/id")
     @PreAuthorize("hasAuthority('SCOPE_message:read')")
-    public ResponseEntity<User> findUserById(@RequestParam Long id) {
-        Optional<User> user = userService.findByUserId(id);
-        return user.map(ResponseEntity::ok)
-                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+    public ResponseEntity<User> findUserById(@RequestParam String id) {
+        var user = userService.findByUserId(id);
+        return ResponseEntity.ok(user);
     }
 }
