@@ -17,16 +17,30 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Handle UserNotFoundException
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleUserNotFoundException(UserNotFoundException ex) {
         Map<String, Object> errorDetails = new HashMap<>();
-        errorDetails.put("error", ErrorCode.USER_NOT_FOUND.getCode());
-        errorDetails.put("message", ErrorCode.USER_NOT_FOUND.getMessage());
+        errorDetails.put("error", ex.getErrorCode().getCode());
+        errorDetails.put("message", ex.getMessage());
         return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
     }
 
-    // Handle Jakarta annotation validation
+    @ExceptionHandler(UserExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleUserExistsException(UserExistsException ex) {
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("error", ex.getErrorCode().getCode());
+        errorDetails.put("message", ex.getMessage());
+        return new ResponseEntity<>(errorDetails, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(TaskNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleTaskNotFoundException(TaskNotFoundException ex) {
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("error", ex.getErrorCode().getCode());
+        errorDetails.put("message", ex.getMessage());
+        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, Object> errorDetails = new HashMap<>();
@@ -35,27 +49,12 @@ public class GlobalExceptionHandler {
         List<String> errorMessages = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(FieldError::getDefaultMessage) // Extracts the default message for each field error
+                .map(FieldError::getDefaultMessage)
                 .toList();
 
         errorDetails.put("message", errorMessages);
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(TaskNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleTaskNotFoundException(TaskNotFoundException ex) {
-        Map<String, Object> errorDetails = new HashMap<>();
-        errorDetails.put("error", ErrorCode.TASK_NOT_FOUND.getCode());
-        errorDetails.put("message", ErrorCode.TASK_NOT_FOUND.getMessage());
-        return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(UserExistsException.class)
-    public ResponseEntity<Map<String, Object>> handleUserExistsException(UserExistsException ex) {
-        Map<String, Object> errorDetails = new HashMap<>();
-        errorDetails.put("error", ErrorCode.USER_EXISTS.getCode());
-        errorDetails.put("message", ErrorCode.USER_EXISTS.getMessage());
-        return new ResponseEntity<>(errorDetails, HttpStatus.CONFLICT);
-    }
-
 }
+

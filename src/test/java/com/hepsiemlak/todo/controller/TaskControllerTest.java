@@ -22,7 +22,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static com.hepsiemlak.todo.contants.TodoTestConstants.TASK_ID;
 import static com.hepsiemlak.todo.contants.TodoTestConstants.USER_ID;
@@ -80,7 +79,7 @@ class TaskControllerTest {
     void testCreateTask_Success() throws Exception {
         // Arrange
 
-        when(userService.findByUserId(anyString())).thenReturn(Optional.of(user));
+        when(userService.findByUserId(anyString())).thenReturn((user));
         when(taskService.createTask(any(Task.class))).thenReturn(task);
 
         // Act & Assert
@@ -101,7 +100,8 @@ class TaskControllerTest {
     @Test
     void testCreateTask_UserNotFound() throws Exception {
         // Arrange
-        when(userService.findByUserId(anyString())).thenReturn(Optional.empty());
+        when(userService.findByUserId(anyString())).thenThrow(new UserNotFoundException(ErrorCode.USER_NOT_FOUND,
+                "User with ID %s not found.".formatted("id")));
 
         // Act & Assert
         mockMvc.perform(post("/v1/tasks")
@@ -158,7 +158,7 @@ class TaskControllerTest {
     @Test
     void testGetTaskByIdAndUser_TaskNotFound() throws Exception {
         // Arrange
-        when(taskService.getTaskByIdAndUser(anyString(), anyString())).thenThrow(new TaskNotFoundException("1", "1"));
+        when(taskService.getTaskByIdAndUser(anyString(), anyString())).thenThrow(new TaskNotFoundException(ErrorCode.TASK_NOT_FOUND, "Task with ID %s not found for user %s".formatted(TASK_ID, USER_ID)));
 
         // Act & Assert
         mockMvc.perform(get("/v1/users/1/tasks/1")
@@ -262,7 +262,7 @@ class TaskControllerTest {
                 .completed(true)
                 .build();
 
-        when(taskService.updateTaskForUser(TASK_ID, updatedTask)).thenThrow(new TaskNotFoundException(TASK_ID, USER_ID));
+        when(taskService.updateTaskForUser(TASK_ID, updatedTask)).thenThrow(new TaskNotFoundException(ErrorCode.TASK_NOT_FOUND, "Task with ID %s not found for user %s".formatted(TASK_ID, USER_ID)));
 
         // Act & Assert
         mockMvc.perform(put("/v1/tasks/{id}", TASK_ID)
@@ -294,7 +294,7 @@ class TaskControllerTest {
     void deleteTask_ShouldReturnNotFound_WhenTaskOrUserDoesNotExist() throws Exception {
         // Arrange
 
-        doThrow(new TaskNotFoundException(TASK_ID, USER_ID))
+        doThrow(new TaskNotFoundException(ErrorCode.TASK_NOT_FOUND, "Task with ID %s not found for user %s".formatted(TASK_ID, USER_ID)))
                 .when(taskService).deleteTaskForUser(TASK_ID, USER_ID);
 
         // Act & Assert

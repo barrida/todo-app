@@ -10,6 +10,6 @@ import java.util.Optional;
  * @author suleyman.yildirim
  */
 public interface TaskRepository extends CrudRepository<Task, String> {
-    Optional<List<Task>> findByUserId(String id);
+    Optional<List<Task>> findByUserId(String userId);
     Optional<Task> findByTaskIdAndUserId(String taskId, String userId);
 }

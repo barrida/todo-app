@@ -1,6 +1,5 @@
 package com.hepsiemlak.todo.controller;
 
-import com.hepsiemlak.todo.exception.ErrorCode;
 import com.hepsiemlak.todo.exception.TaskNotFoundException;
 import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.Task;
@@ -47,9 +46,7 @@ public class TaskController {
     @PostMapping("tasks")
     @PreAuthorize("hasAuthority('SCOPE_message:write')")
     public ResponseEntity<Task> createTask(@RequestBody @Valid Task task) {
-        User user = userService.findByUserId(task.getUserId())
-                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
-
+        User user = userService.findByUserId(task.getUserId());
         task.setUserId(user.getUserId());
         Task createdTask = taskService.createTask(task);
         return ResponseEntity.status(201).body(createdTask);
@@ -58,7 +55,9 @@ public class TaskController {
     @Operation(summary = "Retrieve all tasks for a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List of tasks",
-                    content = @Content(schema = @Schema(implementation = Task.class)))
+                    content = @Content(schema = @Schema(implementation = Task.class))),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(schema = @Schema(implementation = UserNotFoundException.class)))
     })
     @GetMapping("/tasks")
     @PreAuthorize("hasAuthority('SCOPE_message:read')")
@@ -89,9 +88,6 @@ public class TaskController {
             @ApiResponse(responseCode = "400", description = "Invalid task data provided"),
             @ApiResponse(responseCode = "404", description = "Task not found",
                     content = @Content(schema = @Schema(implementation = TaskNotFoundException.class))
-            ),
-            @ApiResponse(responseCode = "404", description = "User not found",
-                    content = @Content(schema = @Schema(implementation = UserNotFoundException.class))
             )
     })
     @PutMapping("/tasks/{id}")

@@ -1,7 +1,10 @@
 package com.hepsiemlak.todo.service;
 
+import com.hepsiemlak.todo.exception.ErrorCode;
 import com.hepsiemlak.todo.exception.UserExistsException;
+import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.User;
+import com.hepsiemlak.todo.repository.TaskRepository;
 import com.hepsiemlak.todo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private TaskRepository taskRepository;
 
     @InjectMocks
     private UserService userService;
@@ -75,53 +81,40 @@ class UserServiceTest {
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
 
         // Act
-        Optional<User> result = userService.findUserByUsername(username);
+        var result = userService.findUserByUsername(username);
 
         // Assert
-        assertEquals(Optional.of(user), result);
+        assertEquals(user, result);
         Mockito.verify(userRepository, times(1)).findByUsername(username);
     }
 
     @Test
-    void testFindUserByUsername_UserDoesNotExist_ReturnsEmptyOptional() {
+    void testFindUserByUsername_UserNotFoundException() {
         // Arrange
-        String username = "nonExistingUser";
+        when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
 
-        when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
-
-        // Act
-        Optional<User> result = userService.findUserByUsername(username);
+        // Act & Assert
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
+            userService.findUserByUsername("nonexistentuser");
+        });
 
         // Assert
-        assertEquals(Optional.empty(), result);
-        Mockito.verify(userRepository, times(1)).findByUsername(username);
+        assert(exception.getErrorCode()).equals(ErrorCode.USER_NOT_FOUND);
+        assert(exception.getMessage()).equals("User with username nonexistentuser not found.");
     }
 
     @Test
-    void testFindByUserId_UserExists_ReturnsUser() {
+    void testFindByUserId_UserNotFoundException() {
         // Arrange
-
-        when(userRepository.findByUserId(anyString())).thenReturn(Optional.of(user));
-
-        // Act
-        Optional<User> result = userService.findByUserId(USER_ID);
-
-        // Assert
-        assertEquals(Optional.of(user), result);
-        Mockito.verify(userRepository, times(1)).findByUserId(USER_ID);
-    }
-
-    @Test
-    void testFindByUserId_UserDoesNotExist_ReturnsEmptyOptional() {
-        // Arrange
-
         when(userRepository.findByUserId(anyString())).thenReturn(Optional.empty());
 
-        // Act
-        Optional<User> result = userService.findByUserId(USER_ID);
+        // Act & Assert
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
+            userService.findByUserId("nonexistentId");
+        });
 
         // Assert
-        assertEquals(Optional.empty(), result);
-        Mockito.verify(userRepository, times(1)).findByUserId(USER_ID);
+        assert(exception.getErrorCode()).equals(ErrorCode.USER_NOT_FOUND);
+        assert(exception.getMessage()).equals("User with ID nonexistentId not found.");
     }
 }

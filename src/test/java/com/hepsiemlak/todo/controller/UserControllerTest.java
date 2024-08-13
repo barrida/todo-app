@@ -2,6 +2,7 @@ package com.hepsiemlak.todo.controller;
 
 import com.hepsiemlak.todo.exception.ErrorCode;
 import com.hepsiemlak.todo.exception.UserExistsException;
+import com.hepsiemlak.todo.exception.UserNotFoundException;
 import com.hepsiemlak.todo.model.User;
 import com.hepsiemlak.todo.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,8 +12,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -80,7 +79,7 @@ class UserControllerTest {
                 .email("existinguser@example.com")
                 .build();
 
-        when(userService.findUserByUsername("existinguser")).thenReturn(Optional.of(existingUser));
+        when(userService.findUserByUsername("existinguser")).thenReturn(existingUser);
 
         mockMvc.perform(get("/v1/user")
                         .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read")))
@@ -92,7 +91,8 @@ class UserControllerTest {
 
     @Test
     void testFindUserByUsername_UserNotFoundException() throws Exception {
-        when(userService.findUserByUsername("nonexistentuser")).thenReturn(Optional.empty());
+        when(userService.findUserByUsername("nonexistentuser")).thenThrow( new UserNotFoundException(ErrorCode.USER_NOT_FOUND,
+                        "User with username %s not found.".formatted("nonexistentuser")));
 
         mockMvc.perform(get("/v1/user/nonexistentuser")
                         .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read"))))
@@ -108,7 +108,7 @@ class UserControllerTest {
                 .email("existinguser@example.com")
                 .build();
 
-        when(userService.findByUserId(anyString())).thenReturn(Optional.of(existingUser));
+        when(userService.findByUserId(anyString())).thenReturn(existingUser);
 
         mockMvc.perform(get("/v1/user/id")
                         .with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read")))
@@ -120,7 +120,7 @@ class UserControllerTest {
 
     @Test
     void testFindUserById_UserNotFoundException() throws Exception {
-        when(userService.findByUserId(anyString())).thenReturn(Optional.empty());
+        when(userService.findByUserId(anyString())).thenReturn(null);
 
         mockMvc.perform(get("/v1/user/1").with(jwt().jwt((jwt) -> jwt.claim("scope", "message:read"))))
                 .andExpect(status().isNotFound());

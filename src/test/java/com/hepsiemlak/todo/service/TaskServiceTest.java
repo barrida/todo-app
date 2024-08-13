@@ -147,7 +147,7 @@ class TaskServiceTest {
             taskService.getTasksByUser(USER_ID);
         });
 
-        assertEquals("User not found", exception.getMessage());
+        assertEquals("User with ID %s was not found or has no tasks.".formatted(USER_ID), exception.getMessage());
         verify(taskRepository, times(1)).findByUserId(USER_ID);
     }
 

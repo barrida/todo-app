@@ -135,3 +135,7 @@ curl -X POST http://localhost:8080/v1/users \
 # OpenAPI Swagger endpoint definition
 
 Browse to Swagger to analyse endpoints http://localhost:8080/swagger-ui/index.html#/
+
+# Test Endpoints via Postman
+
+Import `todo-app collection.postman_collection.json` collection to Postman. All endpoints including JWT token generation are represented with sample data.
